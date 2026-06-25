@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Environment variables — NEVER commit these
+.env
+*.env.local
+
+# HuggingFace model cache (large binary files)
+~/.cache/huggingface/
+
+# Uploaded PDFs (temporary — not source code)
+*.pdf
+
+# Node / Frontend
+node_modules/
+dist/
+.next/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
