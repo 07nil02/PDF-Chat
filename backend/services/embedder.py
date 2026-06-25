@@ -1,7 +1,7 @@
 """
 embedder.py
 -----------
-Uses Google Gemini gemini-embedding-2 via the free Google AI Studio API.
+Uses Google Gemini gemini-embedding-2 via the official new google-genai SDK.
 
 MTEB score: highest quality available at $0.
 Output dimensions: 768
@@ -14,19 +14,19 @@ Delete the old index in the Pinecone dashboard and create a new one:
 """
 
 import os
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-_configured = False
+_client: genai.Client | None = None
 
 def _configure():
-    global _configured
-    if not _configured:
+    global _client
+    if _client is None:
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise EnvironmentError("GOOGLE_API_KEY not set in .env")
-        genai.configure(api_key=api_key)
-        _configured = True
-        print("[Embedder] Gemini gemini-embedding-2 ready.")
+        _client = genai.Client(api_key=api_key)
+        print("[Embedder] Google GenAI SDK initialized with gemini-embedding-2.")
 
 
 def get_model():
@@ -53,13 +53,22 @@ def embed_documents(texts: list[str]) -> list[list[float]]:
 
     for i in range(0, len(texts), BATCH_SIZE):
         batch = texts[i : i + BATCH_SIZE]
-        result = genai.embed_content(
+        
+        # Workaround: Wrap each text in a Content object to ensure
+        # gemini-embedding-2 processes them as separate inputs (a batch)
+        # rather than parts of a single document.
+        wrapped_contents = [types.Content(parts=[types.Part(text=s)]) for s in batch]
+        
+        response = _client.models.embed_content(
             model="models/gemini-embedding-2",
-            content=batch,
-            task_type="RETRIEVAL_DOCUMENT",
-            output_dimensionality=768,
+            contents=wrapped_contents,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_DOCUMENT",
+                output_dimensionality=768,
+            )
         )
-        all_embeddings.extend(result["embedding"])
+        batch_embeddings = [e.values for e in response.embeddings]
+        all_embeddings.extend(batch_embeddings)
         print(f"[Embedder] Embedded batch {i // BATCH_SIZE + 1} ({len(batch)} chunks)")
 
     return all_embeddings
@@ -73,10 +82,12 @@ def embed_query(text: str) -> list[float]:
     accurate. Never use RETRIEVAL_DOCUMENT for queries.
     """
     _configure()
-    result = genai.embed_content(
+    response = _client.models.embed_content(
         model="models/gemini-embedding-2",
-        content=text,
-        task_type="RETRIEVAL_QUERY",
-        output_dimensionality=768,
+        contents=text,
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_QUERY",
+            output_dimensionality=768,
+        )
     )
-    return result["embedding"]
+    return response.embeddings[0].values

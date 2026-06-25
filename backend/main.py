@@ -18,7 +18,11 @@ The --reload flag restarts the server on file changes. Remove it in production
 import os
 import shutil
 import tempfile
+import warnings
 from contextlib import asynccontextmanager
+
+# Suppress deprecation warnings triggered by third-party packages (like pypdf/cryptography)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
