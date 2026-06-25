@@ -1,0 +1,252 @@
+.window {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-4) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ─── Message rows ───────────────────────────────────────────────────────── */
+
+.messageRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  max-width: 100%;
+}
+
+.userRow {
+  flex-direction: row-reverse;
+}
+
+.assistantRow {
+  flex-direction: row;
+}
+
+/* ─── Avatar ─────────────────────────────────────────────────────────────── */
+
+.avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ─── Bubbles ────────────────────────────────────────────────────────────── */
+
+.bubble {
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  max-width: min(480px, 82%);
+  word-break: break-word;
+}
+
+.userBubble {
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.assistantBubble {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.errorBubble {
+  background: var(--error-dim);
+  border-color: var(--error);
+}
+
+/* ─── Typing indicator ───────────────────────────────────────────────────── */
+
+.typingBubble {
+  padding: var(--space-3) var(--space-5);
+}
+
+.typingDots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  height: 18px;
+}
+
+.typingDots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+.typingDots span:nth-child(2) { animation-delay: 0.2s; }
+.typingDots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ─── Markdown content styles ────────────────────────────────────────────── */
+
+.content {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: inherit;
+}
+
+.mdP {
+  margin: 0;
+}
+
+.mdP + .mdP {
+  margin-top: var(--space-2);
+}
+
+.mdStrong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mdUl, .mdOl {
+  padding-left: var(--space-5);
+  margin: var(--space-2) 0;
+}
+
+.mdLi {
+  margin-bottom: var(--space-1);
+}
+
+.mdInlineCode {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  color: var(--accent-bright);
+}
+
+.mdPre {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin: var(--space-3) 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.mdBlockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: var(--space-3);
+  margin: var(--space-2) 0;
+  color: var(--text-secondary);
+}
+
+.mdH {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin: var(--space-3) 0 var(--space-1);
+  color: var(--text-primary);
+}
+
+/* ─── Source chunks (collapsible) ────────────────────────────────────────── */
+
+.sources {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.sourcesSummary {
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  transition: color var(--fast) var(--ease);
+}
+
+.sourcesSummary::-webkit-details-marker { display: none; }
+
+.sourcesSummary::before {
+  content: '▶';
+  font-size: 8px;
+  transition: transform var(--fast) var(--ease);
+}
+
+details[open] .sourcesSummary::before {
+  transform: rotate(90deg);
+}
+
+.sourcesSummary:hover {
+  color: var(--text-secondary);
+}
+
+.sourcesList {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sourceChunk {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.sourceMeta {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sourceLabel {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--accent-bright);
+  background: var(--accent-dim);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.sourcePage {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.sourceScore {
+  font-size: 10px;
+  color: var(--success);
+  font-family: var(--font-mono);
+  margin-left: auto;
+}
+
+.sourceText {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  margin: 0;
+}

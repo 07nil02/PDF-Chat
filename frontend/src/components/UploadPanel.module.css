@@ -1,0 +1,98 @@
+.wrapper {
+  padding: var(--space-4);
+}
+
+.zone {
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color var(--mid) var(--ease),
+              background var(--mid) var(--ease),
+              box-shadow var(--mid) var(--ease);
+  min-height: 110px;
+  user-select: none;
+}
+
+.zone:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.zone.dragging {
+  border-color: var(--accent-bright);
+  border-style: solid;
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 4px var(--accent-dim);
+}
+
+.zone.success {
+  border-color: var(--success);
+  border-style: solid;
+  background: var(--success-dim);
+}
+
+.zone.error {
+  border-color: var(--error);
+  border-style: solid;
+  background: var(--error-dim);
+}
+
+.zone.loading {
+  cursor: default;
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.hiddenInput {
+  display: none;
+}
+
+/* Content layouts */
+.idleContent,
+.loadingContent,
+.successContent,
+.errorContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.icon {
+  width: 28px;
+  height: 28px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.successIcon {
+  width: 24px;
+  height: 24px;
+  color: var(--success);
+}
+
+.errorIcon {
+  width: 24px;
+  height: 24px;
+  color: var(--error);
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+  max-width: 240px;
+  word-break: break-all;
+}
+
+.sublabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: -2px;
+}

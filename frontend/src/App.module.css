@@ -1,0 +1,165 @@
+/* ─── Root layout ────────────────────────────────────────────────────────── */
+
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+/* ─── Sidebar ────────────────────────────────────────────────────────────── */
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Branding */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+}
+
+.brandIcon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-bright);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.brandTagline {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  margin-top: 1px;
+}
+
+.sidebarDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 var(--space-4);
+}
+
+/* Section */
+.sidebarSection {
+  padding: var(--space-4) 0 0;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 var(--space-4) var(--space-2);
+}
+
+/* Active doc info */
+.docInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) var(--space-4) 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--success-dim);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-md);
+}
+
+.docIcon {
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.docName {
+  font-size: 11.5px;
+  color: var(--success);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.sidebarSpacer {
+  flex: 1;
+}
+
+/* Footer */
+.sidebarFooter {
+  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.footerText {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-family: var(--font-mono);
+}
+
+/* ─── Chat panel ─────────────────────────────────────────────────────────── */
+
+.chatPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+/* ─── Responsive: stack vertically on small screens ─────────────────────── */
+
+@media (max-width: 640px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .sidebarSpacer {
+    display: none;
+  }
+
+  .sidebarFooter {
+    display: none;
+  }
+
+  .brand {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .chatPanel {
+    flex: 1;
+    min-height: 0;
+  }
+}
