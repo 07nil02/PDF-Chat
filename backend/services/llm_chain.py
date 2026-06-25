@@ -4,7 +4,7 @@ llm_chain.py
 Builds and invokes the LangChain RAG chain.
 
 Pipeline:
-  PromptTemplate  →  ChatGroq (llama3-8b-8192)  →  StrOutputParser
+  PromptTemplate  →  ChatGroq (llama-3.1-8b-instant)  →  StrOutputParser
 
 Why this chain structure?
   LangChain's pipe operator (|) creates a Runnable sequence. Each stage
@@ -13,7 +13,7 @@ Why this chain structure?
 
 Groq API:
   - Free tier: generous rate limits (~30 req/min, 14,400 req/day)
-  - llama3-8b-8192: fast (200+ tokens/sec), 8192-token context window
+  - llama-3.1-8b-instant: fast (200+ tokens/sec), 8192-token context window
   - No card required for free tier
 """
 
@@ -72,10 +72,10 @@ def get_chain():
             "Check your .env file."
         )
 
-    print("[LLMChain] Initializing Groq LLM (llama3-8b-8192)...")
+    print("[LLMChain] Initializing Groq LLM (llama-3.1-8b-instant)...")
     _llm = ChatGroq(
         api_key=api_key,
-        model_name="llama3-8b-8192",
+        model_name="llama-3.1-8b-instant",
         temperature=0.1,        # low temperature = factual, less creative
         max_tokens=1024,        # cap output length; the answer should be concise
     )

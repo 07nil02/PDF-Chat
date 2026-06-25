@@ -136,7 +136,7 @@ def similarity_search(query_embedding: list[float], top_k: int = 4) -> list[dict
         query_embedding: 384-dim vector from embedder.embed_query()
         top_k          : Number of results to return (default 4).
                          4 × ~750 tokens = ~3000 tokens of context,
-                         well within llama3-8b-8192's context window.
+                         well within llama-3.1-8b-instant's context window.
 
     Returns:
         List of dicts, each containing:
