@@ -13,7 +13,7 @@ Pinecone free tier limits:
 
 Index configuration (create this manually in the Pinecone dashboard):
   - Metric    : cosine  (best for semantic text similarity)
-  - Dimensions: 384     (must match all-MiniLM-L6-v2 output)
+  - Dimensions: 768     (must match Google Gemini gemini-embedding-2 output)
   - Pod type  : Starter (free)
 """
 
@@ -62,7 +62,7 @@ def get_index():
         print(f"[VectorStore] Index '{index_name}' not found. Creating...")
         _pinecone_client.create_index(
             name=index_name,
-            dimension=384,          # must match all-MiniLM-L6-v2
+            dimension=768,          # must match Google Gemini gemini-embedding-2
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
@@ -133,7 +133,7 @@ def similarity_search(query_embedding: list[float], top_k: int = 4) -> list[dict
     Find the top-k most similar chunks to the query embedding.
 
     Args:
-        query_embedding: 384-dim vector from embedder.embed_query()
+        query_embedding: 768-dim vector from embedder.embed_query()
         top_k          : Number of results to return (default 4).
                          4 × ~750 tokens = ~3000 tokens of context,
                          well within llama-3.1-8b-instant's context window.

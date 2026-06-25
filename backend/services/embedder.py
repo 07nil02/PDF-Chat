@@ -1,79 +1,82 @@
 """
 embedder.py
 -----------
-Wraps the HuggingFace SentenceTransformer model so it is loaded ONCE
-at startup and reused for every request — not reloaded per call.
+Uses Google Gemini gemini-embedding-2 via the free Google AI Studio API.
 
-Model: all-MiniLM-L6-v2
-  - Size  : ~90 MB (downloaded on first run, cached in ~/.cache/huggingface/)
-  - Output: 384-dimensional float vectors
-  - Speed : ~500 sentences/sec on CPU — fast enough for this use case
+MTEB score: highest quality available at $0.
+Output dimensions: 768
 
-Why a singleton?
-  Loading a transformer model takes ~2–5 seconds. If we called
-  SentenceTransformer() inside each request handler, every upload and
-  every chat message would pay that penalty. Instead, we load once via
-  Python module-level state and reuse the same instance.
+IMPORTANT: Your Pinecone index must be recreated with dimension=768.
+Delete the old index in the Pinecone dashboard and create a new one:
+  Name   : pdf-chatbot
+  Dims   : 768
+  Metric : cosine
 """
 
-from sentence_transformers import SentenceTransformer
+import os
+import google.generativeai as genai
 
-# ---------------------------------------------------------------------------
-# Module-level singleton — loaded once when the FastAPI process starts.
-# ---------------------------------------------------------------------------
-_MODEL_NAME = "all-MiniLM-L6-v2"
-_model: SentenceTransformer | None = None
+_configured = False
+
+def _configure():
+    global _configured
+    if not _configured:
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise EnvironmentError("GOOGLE_API_KEY not set in .env")
+        genai.configure(api_key=api_key)
+        _configured = True
+        print("[Embedder] Gemini gemini-embedding-2 ready.")
 
 
-def get_model() -> SentenceTransformer:
+def get_model():
     """
-    Lazy-load the embedding model. Safe to call multiple times —
-    only instantiates on the first call.
+    Eagerly configures the Gemini API.
+    Maintained for compatibility with main.py startup initialization.
     """
-    global _model
-    if _model is None:
-        print(f"[Embedder] Loading model '{_MODEL_NAME}'...")
-        _model = SentenceTransformer(_MODEL_NAME)
-        print(f"[Embedder] Model loaded. Embedding dimension: {_model.get_sentence_embedding_dimension()}")
-    return _model
+    _configure()
+    return None
 
 
 def embed_documents(texts: list[str]) -> list[list[float]]:
     """
-    Embed a batch of text strings. Used during PDF ingestion.
+    Embed a batch of document chunks.
+    Gemini's task_type='RETRIEVAL_DOCUMENT' tells the model these are
+    passages being indexed — produces better retrieval vectors than
+    using the default task type.
 
-    Args:
-        texts: List of chunk strings from pdf_processor.extract_texts()
-
-    Returns:
-        List of 384-dimensional float vectors (one per input text).
-        Each vector is a plain Python list[float] — Pinecone expects this format.
-
-    Note:
-        SentenceTransformer.encode() returns a numpy ndarray. We call .tolist()
-        to convert to plain Python lists for JSON serialisation compatibility.
+    Batches in groups of 100 to stay within API limits.
     """
-    model = get_model()
-    # show_progress_bar=True prints a tqdm bar during large batch uploads
-    embeddings = model.encode(texts, show_progress_bar=True, convert_to_numpy=True)
-    return embeddings.tolist()
+    _configure()
+    all_embeddings = []
+    BATCH_SIZE = 100
+
+    for i in range(0, len(texts), BATCH_SIZE):
+        batch = texts[i : i + BATCH_SIZE]
+        result = genai.embed_content(
+            model="models/gemini-embedding-2",
+            content=batch,
+            task_type="RETRIEVAL_DOCUMENT",
+            output_dimensionality=768,
+        )
+        all_embeddings.extend(result["embedding"])
+        print(f"[Embedder] Embedded batch {i // BATCH_SIZE + 1} ({len(batch)} chunks)")
+
+    return all_embeddings
 
 
 def embed_query(text: str) -> list[float]:
     """
-    Embed a single query string. Used during chat to embed the user's question.
-
-    Args:
-        text: The user's question as a plain string.
-
-    Returns:
-        A single 384-dimensional float vector as list[float].
-
-    Note:
-        We call encode() with a list of one string and take index [0]
-        to keep the same code path as embed_documents, ensuring the model
-        sees the same tokenisation logic.
+    Embed a single user query.
+    task_type='RETRIEVAL_QUERY' is a different instruction to the model
+    than RETRIEVAL_DOCUMENT — this asymmetry is what makes retrieval
+    accurate. Never use RETRIEVAL_DOCUMENT for queries.
     """
-    model = get_model()
-    embedding = model.encode([text], convert_to_numpy=True)
-    return embedding[0].tolist()
+    _configure()
+    result = genai.embed_content(
+        model="models/gemini-embedding-2",
+        content=text,
+        task_type="RETRIEVAL_QUERY",
+        output_dimensionality=768,
+    )
+    return result["embedding"]
