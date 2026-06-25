@@ -173,5 +173,25 @@ def clear_index() -> None:
     For multi-user production, you'd namespace by user/session ID instead.
     """
     index = get_index()
-    index.delete(delete_all=True)
-    print("[VectorStore] All vectors cleared from index.")
+    stats = index.describe_index_stats()
+    
+    # If the index is already empty, or if the default namespace does not exist,
+    # calling delete(delete_all=True) will raise a 'Namespace not found' (404) error on serverless indexes.
+    if stats.get('total_vector_count', 0) == 0:
+        print("[VectorStore] Index is already empty. Skipping clear.")
+        return
+
+    namespaces = stats.get('namespaces', {})
+    if "" not in namespaces:
+        print("[VectorStore] Default namespace does not exist. Skipping clear.")
+        return
+
+    try:
+        index.delete(delete_all=True)
+        print("[VectorStore] All vectors cleared from index.")
+    except Exception as e:
+        if "Namespace not found" in str(e) or "404" in str(e):
+            print("[VectorStore] Namespace not found or already empty. Skipping clear.")
+        else:
+            raise e
+
