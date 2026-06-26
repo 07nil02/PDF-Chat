@@ -18,12 +18,6 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
-# ---------------------------------------------------------------------------
-# Constants — tweak these if retrieval quality feels off.
-# chunk_size=1000  : ~750 tokens — four chunks fit comfortably in Llama3's
-#                    8192-token window alongside the prompt template.
-# chunk_overlap=200: 20% overlap prevents semantic breaks at chunk boundaries.
-# ---------------------------------------------------------------------------
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
@@ -58,7 +52,7 @@ def load_and_split(file_path: str) -> list:
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
         length_function=len,
-        add_start_index=True,   # adds 'start_index' to metadata — useful for debugging
+        add_start_index=True,
     )
 
     chunks = splitter.split_documents(pages)

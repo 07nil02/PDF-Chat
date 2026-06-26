@@ -3,14 +3,6 @@ embedder.py
 -----------
 Uses Google Gemini gemini-embedding-2 via the official new google-genai SDK.
 
-MTEB score: highest quality available at $0.
-Output dimensions: 768
-
-IMPORTANT: Your Pinecone index must be recreated with dimension=768.
-Delete the old index in the Pinecone dashboard and create a new one:
-  Name   : pdf-chatbot
-  Dims   : 768
-  Metric : cosine
 """
 
 import os

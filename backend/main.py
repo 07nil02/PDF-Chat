@@ -4,15 +4,9 @@ main.py
 FastAPI application entry point.
 
 Endpoints:
-  GET  /health    — liveness check (used by Render to detect healthy deploys)
+  GET  /health    — liveness check
   POST /upload    — ingest a PDF: extract → chunk → embed → upsert to Pinecone
   POST /chat      — answer a question: embed query → retrieve → generate
-
-Run locally:
-  uvicorn main:app --reload --port 8000
-
-The --reload flag restarts the server on file changes. Remove it in production
-(Render uses: uvicorn main:app --host 0.0.0.0 --port $PORT).
 """
 
 import os
@@ -38,10 +32,6 @@ from services.vector_store import get_index, upsert_vectors, similarity_search, 
 from services.llm_chain import get_chain, generate_answer
 
 
-# ---------------------------------------------------------------------------
-# Lifespan — warm up expensive singletons at startup so the first request
-# doesn't pay the initialization penalty.
-# ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Runs once at startup before the server accepts requests."""
@@ -51,13 +41,9 @@ async def lifespan(app: FastAPI):
     get_chain()     # initializes the Groq LLM + LangChain chain
     print("[Startup] All services ready. Server accepting requests.")
     yield
-    # Teardown (runs on shutdown) — nothing to clean up here
     print("[Shutdown] Server shutting down.")
 
 
-# ---------------------------------------------------------------------------
-# App initialization
-# ---------------------------------------------------------------------------
 app = FastAPI(
     title="RAG PDF Chatbot API",
     description="Upload a PDF and ask questions about it using RAG.",
@@ -66,17 +52,12 @@ app = FastAPI(
 )
 
 
-# ---------------------------------------------------------------------------
-# CORS — critical for browser-based frontends.
-# Without this, the browser blocks all cross-origin API calls.
-# ---------------------------------------------------------------------------
-# Collect allowed origins from environment so we never hardcode URLs.
+
 _origins = [
-    "http://localhost:5173",        # Vite dev server default port
-    "http://localhost:3000",        # in case you run a different dev server
+    "http://localhost:5173",        
+    "http://localhost:3000",        
 ]
 
-# In production, add the deployed frontend URL via environment variable.
 frontend_url = os.getenv("FRONTEND_URL", "").strip()
 if frontend_url:
     _origins.append(frontend_url)
@@ -90,10 +71,7 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------------
-# Pydantic models — define the shape of request and response JSON bodies.
-# FastAPI uses these for automatic validation and OpenAPI docs (/docs).
-# ---------------------------------------------------------------------------
+
 class ChatRequest(BaseModel):
     question: str
 
@@ -109,10 +87,6 @@ class HealthResponse(BaseModel):
     status: str
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
-
 @app.get("/health", response_model=HealthResponse)
 def health_check():
     """
@@ -127,19 +101,7 @@ async def upload_pdf(file: UploadFile = File(...)):
     """
     Ingest a PDF document into the vector store.
 
-    Steps:
-      1. Validate the uploaded file is a PDF.
-      2. Save it to a temporary file (PyPDFLoader needs a file path, not bytes).
-      3. Extract and chunk the text via pdf_processor.
-      4. Embed all chunks via embedder.
-      5. Clear the old index (single-document mode) and upsert new vectors.
-      6. Clean up the temp file.
-
-    The temp file pattern is necessary because PyPDFLoader takes a file path
-    rather than a file-like object. tempfile.NamedTemporaryFile with
-    delete=False lets us control deletion after we're done with it.
     """
-    # Validate file type
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=400,
@@ -167,7 +129,6 @@ async def upload_pdf(file: UploadFile = File(...)):
         print(f"[Upload] Generated {len(embeddings)} embeddings")
 
         # Clear previous document's vectors, then upsert new ones.
-        # For a multi-user system you'd namespace by session/user ID instead.
         print("[Upload] Clearing previous vectors...")
         clear_index()
 
@@ -180,11 +141,9 @@ async def upload_pdf(file: UploadFile = File(...)):
         }
 
     except ValueError as e:
-        # PDF load/split errors (scanned image PDFs, empty files, etc.)
         raise HTTPException(status_code=422, detail=str(e))
 
     except Exception as e:
-        # Catch-all for Pinecone timeouts, disk errors, etc.
         print(f"[Upload] Unexpected error: {e}")
         raise HTTPException(
             status_code=500,
@@ -192,7 +151,6 @@ async def upload_pdf(file: UploadFile = File(...)):
         )
 
     finally:
-        # Always clean up the temp file, even if processing failed.
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
             print(f"[Upload] Temp file deleted: {tmp_path}")
@@ -203,15 +161,6 @@ async def chat(request: ChatRequest):
     """
     Answer a question about the uploaded PDF.
 
-    Steps:
-      1. Validate the question is not empty.
-      2. Embed the question into a 384-dim vector.
-      3. Similarity search Pinecone for top 4 matching chunks.
-      4. Build context string and call the LangChain/Groq chain.
-      5. Return the answer + source chunks.
-
-    The sources list lets the frontend optionally display which parts of
-    the document the answer was drawn from — good for user trust.
     """
     question = request.question.strip()
 

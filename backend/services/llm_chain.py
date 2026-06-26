@@ -6,15 +6,6 @@ Builds and invokes the LangChain RAG chain.
 Pipeline:
   PromptTemplate  →  ChatGroq (llama-3.1-8b-instant)  →  StrOutputParser
 
-Why this chain structure?
-  LangChain's pipe operator (|) creates a Runnable sequence. Each stage
-  receives the output of the previous stage. StrOutputParser strips the
-  AIMessage wrapper and returns a plain string — easier to send as JSON.
-
-Groq API:
-  - Free tier: generous rate limits (~30 req/min, 14,400 req/day)
-  - llama-3.1-8b-instant: fast (200+ tokens/sec), 8192-token context window
-  - No card required for free tier
 """
 
 import os
@@ -22,10 +13,6 @@ from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-# ---------------------------------------------------------------------------
-# The prompt template — the most important tuning knob in the whole system.
-# Changing this changes the personality and accuracy of every answer.
-# ---------------------------------------------------------------------------
 RAG_PROMPT_TEMPLATE = """You are an expert assistant that answers questions based strictly on the provided context extracted from a PDF document.
 
 Context from the document:
@@ -43,9 +30,6 @@ Instructions:
 Answer:"""
 
 
-# ---------------------------------------------------------------------------
-# Singleton LLM instance — loaded once, reused per request.
-# ---------------------------------------------------------------------------
 _llm: ChatGroq | None = None
 _chain = None
 
@@ -101,14 +85,9 @@ def generate_answer(context_chunks: list[dict], question: str) -> str:
 
     Returns:
         str — the LLM's answer as a plain string.
-
-    How context is assembled:
-        We concatenate the text of each chunk, separated by a divider line.
-        The chunk number and page reference help the LLM cite its sources.
     """
     chain = get_chain()
 
-    # Build the context string from retrieved chunks
     context_parts = []
     for i, chunk in enumerate(context_chunks, start=1):
         page_ref = f"(Page {chunk['page'] + 1})" if chunk.get("page") is not None else ""

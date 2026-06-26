@@ -8,13 +8,10 @@ Responsibilities:
   2. Upsert (insert/update) vectors during PDF ingestion.
   3. Query the index during chat to retrieve the top-k most similar chunks.
 
-Pinecone free tier limits:
-  - 1 index, 100,000 vectors, 1 GB storage — more than enough for this project.
-
-Index configuration (create this manually in the Pinecone dashboard):
-  - Metric    : cosine  (best for semantic text similarity)
-  - Dimensions: 768     (must match Google Gemini gemini-embedding-2 output)
-  - Pod type  : Starter (free)
+Index configuration:
+  - Metric    : cosine  
+  - Dimensions: 768    
+  - Pod type  : Starter 
 """
 
 import os
@@ -31,11 +28,6 @@ _index = None
 def get_index():
     """
     Lazy-initialize the Pinecone client and index connection.
-    Reads PINECONE_API_KEY and PINECONE_INDEX_NAME from environment.
-
-    Why not initialize at import time?
-      The .env file is loaded in main.py before the services are imported.
-      Module-level initialization would run before dotenv has loaded the keys.
     """
     global _pinecone_client, _index
 
@@ -55,14 +47,12 @@ def get_index():
     _pinecone_client = Pinecone(api_key=api_key)
 
     # If the index doesn't exist yet, create it automatically.
-    # In production you'd create it manually in the dashboard, but this is
-    # handy for first-run setup.
     existing_indexes = [idx.name for idx in _pinecone_client.list_indexes()]
     if index_name not in existing_indexes:
         print(f"[VectorStore] Index '{index_name}' not found. Creating...")
         _pinecone_client.create_index(
             name=index_name,
-            dimension=768,          # must match Google Gemini gemini-embedding-2
+            dimension=768,         
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
@@ -79,9 +69,8 @@ def upsert_vectors(chunks: list, embeddings: list[list[float]]) -> int:
     Store text chunks and their embeddings in Pinecone.
 
     Args:
-        chunks    : List[Document] from pdf_processor.load_and_split()
-        embeddings: List[list[float]] from embedder.embed_documents()
-                    Must be the same length as chunks.
+        chunks    : List[Document] 
+        embeddings: List[list[float]] 
 
     Returns:
         int — number of vectors successfully upserted.
@@ -100,7 +89,6 @@ def upsert_vectors(chunks: list, embeddings: list[list[float]]) -> int:
         )
 
     # Build the list of (id, vector, metadata) tuples Pinecone expects.
-    # We use uuid4 for IDs because chunk order is irrelevant for retrieval.
     vectors = []
     for chunk, embedding in zip(chunks, embeddings):
         vectors.append({
@@ -113,8 +101,7 @@ def upsert_vectors(chunks: list, embeddings: list[list[float]]) -> int:
             },
         })
 
-    # Pinecone recommends batch sizes of 100. We'll upsert in batches
-    # to avoid hitting request size limits on large PDFs.
+    # Pinecone recommends batch sizes of 100. 
     BATCH_SIZE = 100
     total_upserted = 0
 
@@ -135,20 +122,18 @@ def similarity_search(query_embedding: list[float], top_k: int = 4) -> list[dict
     Args:
         query_embedding: 768-dim vector from embedder.embed_query()
         top_k          : Number of results to return (default 4).
-                         4 × ~750 tokens = ~3000 tokens of context,
-                         well within llama-3.1-8b-instant's context window.
 
     Returns:
         List of dicts, each containing:
           { "text": str, "score": float, "page": int, "source": str }
-        Sorted by similarity score descending (Pinecone does this for us).
+        Sorted by similarity score descending.
     """
     index = get_index()
 
     response = index.query(
         vector=query_embedding,
         top_k=top_k,
-        include_metadata=True,   # we need the "text" field from metadata
+        include_metadata=True,
     )
 
     results = []
@@ -176,7 +161,6 @@ def clear_index() -> None:
     stats = index.describe_index_stats()
     
     # If the index is already empty, or if the default namespace does not exist,
-    # calling delete(delete_all=True) will raise a 'Namespace not found' (404) error on serverless indexes.
     if stats.get('total_vector_count', 0) == 0:
         print("[VectorStore] Index is already empty. Skipping clear.")
         return
