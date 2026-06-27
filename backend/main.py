@@ -28,7 +28,8 @@ load_dotenv()
 
 from services.pdf_processor import load_and_split, extract_texts
 from services.embedder import embed_documents, embed_query, get_model
-from services.vector_store import get_index, upsert_vectors, similarity_search, clear_index
+from services.sparse_encoder import fit_encoder, encode_documents, encode_query   # NEW
+from services.vector_store import get_dense_index, get_sparse_index, upsert_vectors, hybrid_search, clear_indexes  # UPDATED
 from services.llm_chain import get_chain, generate_answer
 
 
@@ -37,7 +38,8 @@ async def lifespan(app: FastAPI):
     """Runs once at startup before the server accepts requests."""
     print("[Startup] Warming up services...")
     get_model()     # downloads/loads the HuggingFace model into memory
-    get_index()     # connects to Pinecone
+    get_dense_index()
+    get_sparse_index()    # NEW — warm up sparse index connection
     get_chain()     # initializes the Groq LLM + LangChain chain
     print("[Startup] All services ready. Server accepting requests.")
     yield
@@ -123,17 +125,23 @@ async def upload_pdf(file: UploadFile = File(...)):
         texts = extract_texts(chunks)
         print(f"[Upload] Extracted {len(chunks)} chunks from {file.filename}")
 
-        # Embed
+        # Dense embeddings (Gemini)
         print("[Upload] Embedding chunks...")
-        embeddings = embed_documents(texts)
-        print(f"[Upload] Generated {len(embeddings)} embeddings")
+        dense_embeddings = embed_documents(texts)
+        print(f"[Upload] Generated {len(dense_embeddings)} dense embeddings")
+
+        # Sparse BM25 vectors — fit on THIS document's corpus, then encode
+        print("[Upload] Fitting BM25 encoder on document chunks...")
+        fit_encoder(texts)                          # NEW
+        sparse_vectors = encode_documents(texts)    # NEW
+        print(f"[Upload] Generated {len(sparse_vectors)} sparse vectors")
 
         # Clear previous document's vectors, then upsert new ones.
         print("[Upload] Clearing previous vectors...")
-        clear_index()
+        clear_indexes()                             # was clear_index()
 
         print("[Upload] Upserting to Pinecone...")
-        count = upsert_vectors(chunks, embeddings)
+        count = upsert_vectors(chunks, dense_embeddings, sparse_vectors)
 
         return {
             "message": f"Successfully processed '{file.filename}'",
@@ -175,12 +183,20 @@ async def chat(request: ChatRequest):
 
     try:
         # Embed the question
-        print(f"[Chat] Embedding query: '{question[:80]}...' " if len(question) > 80 else f"[Chat] Embedding query: '{question}'")
-        query_vector = embed_query(question)
+        print(f"[Chat] Embedding query (dense): '{question[:80]}...' " if len(question) > 80 else f"[Chat] Embedding query (dense): '{question}'")
+        query_dense = embed_query(question)
 
-        # Retrieve top 4 relevant chunks
-        print("[Chat] Searching Pinecone...")
-        context_chunks = similarity_search(query_vector, top_k=4)
+        # Sparse BM25 vector for query
+        print(f"[Chat] Encoding query (sparse): '{question[:80]}...' " if len(question) > 80 else f"[Chat] Encoding query (sparse): '{question}'")
+        query_sparse = encode_query(question)       # NEW
+
+        # Retrieve top 4 relevant chunks via hybrid search
+        print("[Chat] Searching Pinecone via hybrid search...")
+        context_chunks = hybrid_search(             # was similarity_search()
+            dense_vector=query_dense,
+            sparse_vector=query_sparse,
+            top_k=4,
+        )
 
         if not context_chunks:
             return {
