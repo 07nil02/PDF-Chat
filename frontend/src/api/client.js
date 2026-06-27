@@ -11,20 +11,18 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
  * @param {function} onProgress - Optional callback(percent: number) for future progress UI.
  * @returns {Promise<{ message: string, chunks: number }>}
  */
-export async function uploadPDF(file, onProgress) {
+export async function uploadPDF(file, sessionId) {
   const formData = new FormData()
   formData.append('file', file)
 
-  const response = await fetch(`${BASE_URL}/upload`, {
-    method: 'POST',
-    body: formData,
-  })
-
+  const response = await fetch(
+    `${BASE_URL}/upload?session_id=${sessionId}`,
+    { method: 'POST', body: formData }
+  )
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Upload failed' }))
     throw new Error(error.detail || `Upload failed with status ${response.status}`)
   }
-
   return response.json()
 }
 
@@ -32,20 +30,19 @@ export async function uploadPDF(file, onProgress) {
  * Send a chat question to the backend and get an answer.
  *
  * @param {string} question - The user's question string.
+ * @param {string} sessionId - The conversation session ID.
  * @returns {Promise<{ answer: string, sources: Array<{ text: string, score: number, page: number }> }>}
  */
-export async function askQuestion(question) {
+export async function askQuestion(question, sessionId) {
   const response = await fetch(`${BASE_URL}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, session_id: sessionId }),
   })
-
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }))
     throw new Error(error.detail || `Chat failed with status ${response.status}`)
   }
-
   return response.json()
 }
 

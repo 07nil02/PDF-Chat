@@ -30,7 +30,8 @@ from services.pdf_processor import load_and_split, extract_texts
 from services.embedder import embed_documents, embed_query, get_model
 from services.sparse_encoder import fit_encoder, encode_documents, encode_query   # NEW
 from services.vector_store import get_dense_index, get_sparse_index, upsert_vectors, hybrid_search, clear_indexes  # UPDATED
-from services.llm_chain import get_chain, generate_answer
+from services.memory import get_history, add_turn, clear_history
+from services.llm_chain import get_chain, generate_answer, condense_question
 
 
 @asynccontextmanager
@@ -75,7 +76,8 @@ app.add_middleware(
 
 
 class ChatRequest(BaseModel):
-    question: str
+    question:   str
+    session_id: str = "default"   # frontend sends a UUID; fallback for testing
 
 class ChatResponse(BaseModel):
     answer: str
@@ -99,7 +101,10 @@ def health_check():
 
 
 @app.post("/upload", response_model=UploadResponse)
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(
+    file: UploadFile = File(...),
+    session_id: str = "default",   # add as a query param
+):
     """
     Ingest a PDF document into the vector store.
 
@@ -139,6 +144,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         # Clear previous document's vectors, then upsert new ones.
         print("[Upload] Clearing previous vectors...")
         clear_indexes()                             # was clear_index()
+        clear_history(session_id)                  # NEW — reset conversation on new PDF
 
         print("[Upload] Upserting to Pinecone...")
         count = upsert_vectors(chunks, dense_embeddings, sparse_vectors)
@@ -166,49 +172,53 @@ async def upload_pdf(file: UploadFile = File(...)):
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """
-    Answer a question about the uploaded PDF.
-
-    """
-    question = request.question.strip()
+    question   = request.question.strip()
+    session_id = request.session_id
 
     if not question:
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
-    if len(question) > 1000:
-        raise HTTPException(
-            status_code=400,
-            detail="Question is too long. Please keep it under 1000 characters."
-        )
-
     try:
-        # Embed the question
-        print(f"[Chat] Embedding query (dense): '{question[:80]}...' " if len(question) > 80 else f"[Chat] Embedding query (dense): '{question}'")
-        query_dense = embed_query(question)
+        # Step 1: Get history for this session
+        history = get_history(session_id)
 
-        # Sparse BM25 vector for query
-        print(f"[Chat] Encoding query (sparse): '{question[:80]}...' " if len(question) > 80 else f"[Chat] Encoding query (sparse): '{question}'")
-        query_sparse = encode_query(question)       # NEW
+        # Step 2: Condense question for retrieval
+        # If first turn, returns question unchanged (no LLM call)
+        standalone_question = condense_question(history, question)
 
-        # Retrieve top 4 relevant chunks via hybrid search
+        # Step 3: Embed the CONDENSED question for retrieval
+        print(f"[Chat] Embedding query (dense): '{standalone_question[:80]}...' " if len(standalone_question) > 80 else f"[Chat] Embedding query (dense): '{standalone_question}'")
+        dense_vec  = embed_query(standalone_question)
+
+        print(f"[Chat] Encoding query (sparse): '{standalone_question[:80]}...' " if len(standalone_question) > 80 else f"[Chat] Encoding query (sparse): '{standalone_question}'")
+        sparse_vec = encode_query(standalone_question)
+
+        # Step 4: Hybrid search with the condensed question
         print("[Chat] Searching Pinecone via hybrid search...")
-        context_chunks = hybrid_search(             # was similarity_search()
-            dense_vector=query_dense,
-            sparse_vector=query_sparse,
+        context_chunks = hybrid_search(
+            dense_vector=dense_vec,
+            sparse_vector=sparse_vec,
             top_k=4,
         )
 
         if not context_chunks:
             return {
-                "answer": "No document has been uploaded yet, or the index is empty. Please upload a PDF first.",
+                "answer": "No document has been uploaded yet. Please upload a PDF first.",
                 "sources": [],
             }
 
         print(f"[Chat] Retrieved {len(context_chunks)} chunks (top score: {context_chunks[0]['score']})")
 
-        # Generate answer via Groq
+        # Step 5: Generate answer with ORIGINAL question + history
         print("[Chat] Generating answer via Groq...")
-        answer = generate_answer(context_chunks, question)
+        answer = generate_answer(
+            context_chunks=context_chunks,
+            question=question,         # original, not condensed
+            history=history,
+        )
+
+        # Step 6: Save this turn to memory
+        add_turn(session_id, question, answer)
 
         print(f"[Chat] Answer generated ({len(answer)} chars)")
 

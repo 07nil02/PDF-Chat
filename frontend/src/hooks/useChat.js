@@ -12,8 +12,12 @@
  *   uploadStatus - { type: 'idle'|'loading'|'success'|'error', message: string }
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { uploadPDF, askQuestion } from '../api/client'
+
+// Generate a session ID once per browser session
+// crypto.randomUUID() is available in all modern browsers
+const SESSION_ID = crypto.randomUUID()
 
 const WELCOME_MESSAGE = {
   id: 'welcome',
@@ -22,11 +26,15 @@ const WELCOME_MESSAGE = {
 }
 
 export function useChat() {
-  const [messages, setMessages] = useState([WELCOME_MESSAGE])
-  const [isLoading, setIsLoading] = useState(false)
+  const [messages, setMessages]       = useState([WELCOME_MESSAGE])
+  const [isLoading, setIsLoading]     = useState(false)
   const [isPdfLoaded, setIsPdfLoaded] = useState(false)
-  const [pdfName, setPdfName] = useState(null)
+  const [pdfName, setPdfName]         = useState(null)
   const [uploadStatus, setUploadStatus] = useState({ type: 'idle', message: '' })
+
+  // Keep a history array in sync with messages for sending to backend
+  // Stored as a ref so it doesn't cause re-renders
+  const historyRef = useRef([])
 
   /**
    * Append a message to the thread.
@@ -50,12 +58,12 @@ export function useChat() {
 
     setUploadStatus({ type: 'loading', message: `Processing ${file.name}…` })
     setIsPdfLoaded(false)
-
-    // Clear previous conversation when a new PDF is uploaded
     setMessages([WELCOME_MESSAGE])
+    historyRef.current = []   // clear history on new PDF
 
     try {
-      const result = await uploadPDF(file)
+      // Pass session_id as query param so backend clears memory for this session
+      const result = await uploadPDF(file, SESSION_ID)
       setPdfName(file.name)
       setIsPdfLoaded(true)
       setUploadStatus({
@@ -64,7 +72,7 @@ export function useChat() {
       })
       addMessage({
         role: 'assistant',
-        content: `**${file.name}** has been indexed (${result.chunks} chunks). What would you like to know about it?`,
+        content: `**${file.name}** is ready (${result.chunks} chunks). Ask me anything about it.`,
       })
     } catch (err) {
       setUploadStatus({ type: 'error', message: err.message })
@@ -79,23 +87,24 @@ export function useChat() {
   const handleSend = useCallback(async (question) => {
     if (!question.trim() || isLoading) return
 
-    // Immediately add the user's message to the thread for perceived speed
     addMessage({ role: 'user', content: question })
     setIsLoading(true)
 
     try {
-      const result = await askQuestion(question)
+      const result = await askQuestion(question, SESSION_ID, historyRef.current)
       addMessage({
         role: 'assistant',
         content: result.answer,
         sources: result.sources || [],
       })
+      // Update local history ref
+      historyRef.current = [
+        ...historyRef.current,
+        { role: 'user',      content: question       },
+        { role: 'assistant', content: result.answer  },
+      ]
     } catch (err) {
-      addMessage({
-        role: 'assistant',
-        content: `Something went wrong: ${err.message}`,
-        isError: true,
-      })
+      addMessage({ role: 'assistant', content: `Error: ${err.message}`, isError: true })
     } finally {
       setIsLoading(false)
     }
