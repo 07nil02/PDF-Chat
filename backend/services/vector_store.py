@@ -18,9 +18,6 @@ import os
 import uuid
 from pinecone import Pinecone, ServerlessSpec
 
-# ---------------------------------------------------------------------------
-# Module-level singleton — Pinecone client connected once at startup.
-# ---------------------------------------------------------------------------
 _pinecone_client: Pinecone | None = None
 _index = None
 
