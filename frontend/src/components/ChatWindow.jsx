@@ -1,22 +1,6 @@
 /**
  * ChatWindow.jsx
  * --------------
- * Renders the scrollable message thread.
- *
- * Each message is one of:
- *   - user message   : right-aligned, accent background
- *   - assistant msg  : left-aligned, surface background
- *   - error message  : left-aligned, red tint
- *
- * Assistant messages render markdown via react-markdown so the LLM can use
- * bold, lists, and code blocks in its answers.
- *
- * Source chunks are shown in a collapsed <details> below each assistant
- * message — users can expand them to see exactly which part of the document
- * the answer came from. This is the "transparency" feature of RAG UIs.
- *
- * Auto-scroll: useEffect watches messages.length and scrolls the bottom
- * sentinel div into view whenever a new message is added.
  */
 
 import { useEffect, useRef } from 'react'
@@ -110,7 +94,7 @@ function Avatar() {
   return (
     <div className={styles.avatar} aria-hidden="true">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
       </svg>
     </div>
   )

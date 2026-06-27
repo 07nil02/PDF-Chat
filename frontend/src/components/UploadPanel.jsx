@@ -1,14 +1,5 @@
 /**
  * UploadPanel.jsx
- * ---------------
- * Drag-and-drop PDF upload zone with visual feedback for all states:
- *   idle     → dashed border, invite text
- *   dragging → accent border glow, "Drop to upload" text
- *   loading  → spinner + progress text
- *   success  → filename + chunk count
- *   error    → red border + error message
- *
- * Accepts clicks as well — clicking the zone opens the native file picker.
  */
 
 import { useState, useRef, useCallback } from 'react'

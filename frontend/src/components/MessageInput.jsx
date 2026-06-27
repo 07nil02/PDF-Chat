@@ -2,13 +2,6 @@
  * MessageInput.jsx
  * ----------------
  * The chat input bar at the bottom of the interface.
- *
- * Behaviours:
- *   - Textarea auto-grows up to 5 lines, then scrolls
- *   - Enter sends the message; Shift+Enter inserts a newline
- *   - Disabled and shows a hint when no PDF is loaded yet
- *   - Disabled during API loading to prevent duplicate submissions
- *   - Send button activates only when there is non-whitespace content
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react'
@@ -48,8 +41,8 @@ export default function MessageInput({ onSend, isLoading, isPdfLoaded }) {
   const placeholder = !isPdfLoaded
     ? 'Upload a PDF to start asking questions…'
     : isLoading
-    ? 'Waiting for answer…'
-    : 'Ask anything about the document…'
+      ? 'Waiting for answer…'
+      : 'Ask anything about the document…'
 
   return (
     <div className={styles.inputBar}>
@@ -87,8 +80,8 @@ export default function MessageInput({ onSend, isLoading, isPdfLoaded }) {
 function SendIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="22" y1="2" x2="11" y2="13"/>
-      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </svg>
   )
 }

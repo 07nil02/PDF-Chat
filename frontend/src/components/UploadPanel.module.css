@@ -5,29 +5,37 @@
 .zone {
   border: 1.5px dashed var(--text-muted);
   border-radius: var(--radius-lg);
-  padding: var(--space-6) var(--space-4);
+  padding: var(--space-8) var(--space-5);
   background: var(--bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: border-color var(--mid) var(--ease),
-              background var(--mid) var(--ease),
-              box-shadow var(--mid) var(--ease);
-  min-height: 120px;
+    background var(--mid) var(--ease),
+    box-shadow var(--mid) var(--ease),
+    transform var(--mid) var(--ease);
+  min-height: 200px;
   user-select: none;
 }
 
 .zone:hover {
   border-color: var(--accent);
   background: var(--bg-hover);
+  transform: scale(1.025);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 20px var(--accent-dim);
+}
+
+.zone:active {
+  transform: scale(0.985);
 }
 
 .zone.dragging {
   border-color: var(--accent-bright);
   border-style: solid;
   background: var(--bg-hover);
-  box-shadow: 0 0 0 4px var(--accent-dim);
+  box-shadow: 0 0 0 4px var(--accent-dim), 0 0 20px var(--accent-dim);
+  transform: scale(1.025);
 }
 
 .zone.success {
@@ -36,10 +44,22 @@
   background: var(--success-dim);
 }
 
+.zone.success:hover {
+  border-color: var(--success);
+  background: rgba(16, 185, 129, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
 .zone.error {
   border-color: var(--error);
   border-style: solid;
   background: var(--error-dim);
+}
+
+.zone.error:hover {
+  border-color: var(--error);
+  background: rgba(239, 68, 68, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 20px rgba(239, 68, 68, 0.15);
 }
 
 .zone.loading {
@@ -65,21 +85,21 @@
 }
 
 .icon {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   color: var(--text-secondary);
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
 }
 
 .successIcon {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   color: var(--success);
 }
 
 .errorIcon {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   color: var(--error);
 }
 

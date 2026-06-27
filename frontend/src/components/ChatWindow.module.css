@@ -11,9 +11,22 @@
 
 .messageRow {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
   align-items: flex-start;
   max-width: 100%;
+  animation: messageFadeIn 0.35s var(--ease) forwards;
+}
+
+@keyframes messageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .userRow {
@@ -43,27 +56,40 @@
 /* ─── Bubbles ────────────────────────────────────────────────────────────── */
 
 .bubble {
-  border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
-  max-width: min(480px, 82%);
+  max-width: min(520px, 80%);
   word-break: break-word;
+  transition: all var(--mid) var(--ease);
 }
 
 .userBubble {
-  background: var(--accent);
-  color: var(--bg-base);
-  border-bottom-right-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: #09090b !important;
+  border-radius: 16px 16px 4px 16px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
 }
 
 .assistantBubble {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-bottom-left-radius: var(--radius-sm);
+  background: rgba(39, 39, 42, 0.35) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px 16px 16px 4px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+  color: var(--text-primary) !important;
 }
 
 .errorBubble {
-  background: var(--error-dim);
-  border-color: var(--error);
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border-radius: 16px 16px 16px 4px !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #fca5a5 !important;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.1) !important;
 }
 
 /* ─── Typing indicator ───────────────────────────────────────────────────── */
@@ -144,16 +170,16 @@
 .mdInlineCode {
   font-family: var(--font-mono);
   font-size: 12px;
-  background: var(--bg-base);
-  border: 1px solid var(--border);
+  background: rgba(9, 9, 11, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-sm);
   padding: 1px 5px;
   color: var(--accent-bright);
 }
 
 .mdPre {
-  background: var(--bg-base);
-  border: 1px solid var(--border);
+  background: rgba(9, 9, 11, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   margin: var(--space-3) 0;
@@ -223,8 +249,8 @@ details[open] .sourcesSummary::before {
 }
 
 .sourceChunk {
-  background: var(--bg-base);
-  border: 1px solid var(--border);
+  background: rgba(9, 9, 11, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
   padding: var(--space-3);
 }

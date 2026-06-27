@@ -1,6 +1,6 @@
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 :root {
-  /* Palette — pure black, white, and grey for highlighting */
+
   --bg-base: #09090b;
   --bg-surface: #18181b;
   --bg-elevated: #27272a;

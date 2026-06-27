@@ -1,13 +1,5 @@
 /**
  * api/client.js
- * -------------
- * Single source of truth for all HTTP calls to the FastAPI backend.
- *
- * VITE_API_URL is resolved at build time:
- *   - Local dev  → reads from frontend/.env        → http://localhost:8000
- *   - Production → reads from frontend/.env.production → https://your-app.onrender.com
- *
- * Never import the base URL anywhere else — always go through these functions.
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -26,8 +18,6 @@ export async function uploadPDF(file, onProgress) {
   const response = await fetch(`${BASE_URL}/upload`, {
     method: 'POST',
     body: formData,
-    // Don't set Content-Type header manually — the browser must set it
-    // automatically so it includes the multipart boundary string.
   })
 
   if (!response.ok) {
