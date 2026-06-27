@@ -15,7 +15,6 @@ import tempfile
 import warnings
 from contextlib import asynccontextmanager
 
-# Suppress deprecation warnings triggered by third-party packages (like pypdf/cryptography)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
@@ -32,16 +31,18 @@ from services.sparse_encoder import fit_encoder, encode_documents, encode_query 
 from services.vector_store import get_dense_index, get_sparse_index, upsert_vectors, hybrid_search, clear_indexes  # UPDATED
 from services.memory import get_history, add_turn, clear_history
 from services.llm_chain import get_chain, generate_answer, condense_question
+import asyncio
+from services.evaluator import score_response, get_aggregate_scores
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Runs once at startup before the server accepts requests."""
     print("[Startup] Warming up services...")
-    get_model()     # downloads/loads the HuggingFace model into memory
+    get_model()     
     get_dense_index()
-    get_sparse_index()    # NEW — warm up sparse index connection
-    get_chain()     # initializes the Groq LLM + LangChain chain
+    get_sparse_index()  
+    get_chain()     
     print("[Startup] All services ready. Server accepting requests.")
     yield
     print("[Shutdown] Server shutting down.")
@@ -90,6 +91,18 @@ class UploadResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
 
+class EvalScoresResponse(BaseModel):
+    sample_count: int | None = None
+    averages: dict | None = None
+    latest: dict | None = None
+    history: list | None = None
+    message: str | None = None
+
+class EvalRequest(BaseModel):
+    question: str
+    answer: str
+    context_chunks: list[dict]
+
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
@@ -98,6 +111,33 @@ def health_check():
     Returns 200 OK with {"status": "ok"}.
     """
     return {"status": "ok"}
+
+
+@app.get("/eval/scores", response_model=EvalScoresResponse)
+def get_eval_scores():
+    """
+    Return aggregate RAGAs scores across all chat responses this session.
+    Used by the frontend dashboard and for resume metrics.
+    """
+    return get_aggregate_scores()
+
+
+@app.post("/eval/evaluate")
+async def evaluate_turn(req: EvalRequest):
+    """
+    Manually run RAGAs evaluation on a specific turn.
+    """
+    scores = await score_response(
+        question=req.question,
+        answer=req.answer,
+        context_chunks=req.context_chunks,
+    )
+    if not scores:
+        raise HTTPException(
+            status_code=500,
+            detail="Evaluation failed. This could be due to API rate limits or formatting issues."
+        )
+    return scores
 
 
 @app.post("/upload", response_model=UploadResponse)

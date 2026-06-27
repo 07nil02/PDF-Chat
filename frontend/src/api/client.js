@@ -4,13 +4,6 @@
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-/**
- * Upload a PDF file to the backend for ingestion.
- *
- * @param {File} file - The PDF File object from the file input / drag-drop.
- * @param {function} onProgress - Optional callback(percent: number) for future progress UI.
- * @returns {Promise<{ message: string, chunks: number }>}
- */
 export async function uploadPDF(file, sessionId) {
   const formData = new FormData()
   formData.append('file', file)
@@ -53,5 +46,28 @@ export async function askQuestion(question, sessionId) {
 export async function checkHealth() {
   const response = await fetch(`${BASE_URL}/health`)
   if (!response.ok) throw new Error('Backend unreachable')
+  return response.json()
+}
+
+export async function checkEvalScores() {
+  const response = await fetch(`${BASE_URL}/eval/scores`)
+  if (!response.ok) throw new Error('Eval scores unavailable')
+  return response.json()
+}
+
+export async function runEvaluation(question, answer, contextChunks) {
+  const response = await fetch(`${BASE_URL}/eval/evaluate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      question,
+      answer,
+      context_chunks: contextChunks,
+    }),
+  })
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Evaluation failed' }))
+    throw new Error(error.detail || `Evaluation failed with status ${response.status}`)
+  }
   return response.json()
 }

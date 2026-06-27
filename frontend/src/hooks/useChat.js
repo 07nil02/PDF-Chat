@@ -15,9 +15,16 @@
 import { useState, useCallback, useRef } from 'react'
 import { uploadPDF, askQuestion } from '../api/client'
 
-// Generate a session ID once per browser session
-// crypto.randomUUID() is available in all modern browsers
-const SESSION_ID = crypto.randomUUID()
+// Safe helper to generate unique IDs
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+}
+
+const SESSION_ID = generateUUID()
 
 const WELCOME_MESSAGE = {
   id: 'welcome',
@@ -32,8 +39,7 @@ export function useChat() {
   const [pdfName, setPdfName]         = useState(null)
   const [uploadStatus, setUploadStatus] = useState({ type: 'idle', message: '' })
 
-  // Keep a history array in sync with messages for sending to backend
-  // Stored as a ref so it doesn't cause re-renders
+
   const historyRef = useRef([])
 
   /**
@@ -41,7 +47,7 @@ export function useChat() {
    * @param {{ role: string, content: string, sources?: array, isError?: bool }} msg
    */
   const addMessage = useCallback((msg) => {
-    setMessages(prev => [...prev, { id: crypto.randomUUID(), ...msg }])
+    setMessages(prev => [...prev, { id: generateUUID(), ...msg }])
   }, [])
 
   /**

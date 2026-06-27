@@ -6,6 +6,7 @@ import { useChat } from './hooks/useChat'
 import UploadPanel from './components/UploadPanel'
 import ChatWindow from './components/ChatWindow'
 import MessageInput from './components/MessageInput'
+import EvalPanel from './components/EvalPanel'
 import styles from './App.module.css'
 
 export default function App() {
@@ -63,6 +64,11 @@ export default function App() {
         )}
 
         <div className={styles.sidebarSpacer} />
+
+        <EvalPanel
+          isPdfLoaded={isPdfLoaded}
+          messages={messages}
+        />
 
         {/* Footer */}
         <div className={styles.sidebarFooter}>

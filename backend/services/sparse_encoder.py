@@ -9,9 +9,6 @@ Elasticsearch, Solr, and most search engines. It scores terms by:
   - Inverse document frequency (how rare the word is across all chunks)
   - Document length normalization
 
-Pinecone's BM25Encoder handles all of this. It must be FIT on your corpus
-(the PDF chunks) before it can encode — similar to fitting a sklearn scaler.
-The fitted encoder is stored in memory as a module-level singleton.
 
 Output format: { "indices": [token_ids...], "values": [bm25_scores...] }
 This is a sparse vector — most dimensions are 0, only matching terms are nonzero.
